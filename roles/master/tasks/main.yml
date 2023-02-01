@@ -1,0 +1,100 @@
+---
+# tasks file for master
+- name: copying sysctl.conf file
+  copy:
+    dest: /etc/sysctl.d/kubernetes.conf
+    src: kubernetes.conf
+- name: refreshing sysctl
+  shell: "sysctl --system"  
+
+- name: copying k8s.conf file
+  copy:
+    dest: /etc/modules-load.d/k8s.conf
+    src: k8s.conf
+- name: refreshing sysctl
+  shell: "modprobe overlay && modprobe br_netfilter" 
+- name: Installing Prerequisites for Kubernetes
+  apt: 
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg-agent
+      - vim
+      - software-properties-common
+    state: present
+
+- name: Add Dockers official GPG key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+- name: Add Docker Repository
+  apt_repository:
+    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable
+    state: present
+    filename: docker
+    mode: 0600
+- name: Install containerd.
+  apt: 
+    name:
+      - containerd.io
+    state: present
+- name: Creating the directory
+  file:
+    name: "/etc/containerd"
+    state: directory
+- name: Configure containerd and start service
+  shell: "containerd config default>/etc/containerd/config.toml" 
+- name: add containerd to cgroup
+  shell: "sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml"
+- name: Enable service containerd, and enable persistently
+  service: 
+    name: containerd
+    state: restarted
+    enabled: yes
+    daemon-reload: yes
+
+- name: Add Google official GPG key
+  apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    state: present
+- name: Add Kubernetes Repository
+  apt_repository:
+    repo: deb http://apt.kubernetes.io/ kubernetes-xenial main 
+    state: present
+    filename: kubernetes
+    mode: 0600
+- name: Installing Kubernetes Cluster Packages.
+  apt: 
+    name:
+      - kubeadm
+      - kubectl
+      - kubelet
+    state: present
+- name: Enable service kubelet, and enable persistently
+  service: 
+    name: kubelet
+    enabled: yes
+- name: Pull container images
+  shell: "kubeadm config images pull --cri-socket /run/containerd/containerd.sock"
+
+- name: initializing  kubeadm service
+  shell: "kubeadm init --pod-network-cidr=10.244.0.0/16 --ignore-preflight-errors=all --cri-socket /run/containerd/containerd.sock"
+  ignore_errors: yes   
+- name: Creating the directory
+  file:
+    name: "$HOME/.kube"
+    state: directory
+- name: Copy conf file
+  command: "cp /etc/kubernetes/admin.conf $HOME/.kube/config"
+  ignore_errors: yes
+- name: Change owner and group
+  shell: "chown $(id -u):$(id -g) $HOME/.kube/config"
+- name: Installing flannel
+  shell: "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml"
+- name: Generate join command
+  shell: "kubeadm token create --print-join-command"
+  register: join
+- name: debugging
+  debug:
+    var: join.stdout

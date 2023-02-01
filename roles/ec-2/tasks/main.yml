@@ -1,0 +1,41 @@
+---
+# tasks file for ec-2
+  - name: "Create security group"
+    ec2_group:
+      name: "aws-k8s-sg"
+      description: "Kubernetes-sg"
+      region: "us-east-1"
+      state: present
+      rules:
+        - proto: all
+          cidr_ip: "0.0.0.0/0"
+
+  - name: "Launch master node"
+    ec2_instance:
+      key_name: "master"
+      name: "master"
+      instance_type: "t2.medium"
+      image_id: ami-00874d747dde814fa 
+      count: 1
+      security_group: "aws-k8s-sg"      
+      region: "us-east-1"
+      wait: yes
+      state: present
+      network:
+        assign_public_ip: true
+      tags: {"Name": "Master"}
+
+  - name: "Launch worker nodes"
+    ec2_instance:
+      key_name: "master"
+      name: "worker"
+      instance_type: "t2.medium"
+      image_id: ami-00874d747dde814fa
+      count: 1   
+      security_group: "aws-k8s-sg"        
+      region: "us-east-1"
+      wait: yes
+      state: present
+      network:
+        assign_public_ip: true
+      tags: {"Name": "Worker"}

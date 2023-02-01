@@ -1,0 +1,9 @@
+- hosts: tag_Name_master
+  become: yes
+  roles:
+    - master
+ 
+- hosts: tag_Name_worker
+  become: yes
+  roles:
+    - workers
