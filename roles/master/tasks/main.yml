@@ -1,6 +1,6 @@
 ---
 # tasks file for master
-- name: copying sysctl.conf file
+- name: copying kubernetes.conf file
   copy:
     dest: /etc/sysctl.d/kubernetes.conf
     src: kubernetes.conf
@@ -75,7 +75,7 @@
   service: 
     name: kubelet
     enabled: yes
-- name: Pull container images
+- name: Pull control plane components
   shell: "kubeadm config images pull --cri-socket /run/containerd/containerd.sock"
 
 - name: initializing  kubeadm service
