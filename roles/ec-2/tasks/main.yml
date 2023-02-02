@@ -12,7 +12,7 @@
 
   - name: "Launch master node"
     ec2_instance:
-      key_name: "master"
+      key_name: "k8s"
       name: "master"
       instance_type: "t2.medium"
       image_id: ami-00874d747dde814fa 
@@ -27,7 +27,7 @@
 
   - name: "Launch worker nodes"
     ec2_instance:
-      key_name: "master"
+      key_name: "k8s"
       name: "worker"
       instance_type: "t2.medium"
       image_id: ami-00874d747dde814fa
