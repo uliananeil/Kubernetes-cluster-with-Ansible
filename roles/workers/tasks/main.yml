@@ -1,6 +1,6 @@
 ---
 # tasks file for workers
-- name: copying sysctl.conf file
+- name: copying kubernetes.conf file
   copy:
     dest: /etc/sysctl.d/kubernetes.conf
     src: kubernetes.conf
